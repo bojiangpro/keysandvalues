@@ -6,6 +6,10 @@ import java.util.Comparator;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+/**
+ * String displays all key-value pairs (one pair per line)
+ * Keys are sorted (alpha-ascending, case-insensitive)
+ */
 public class OrderedLineFormater implements Formater 
 {
 

@@ -7,6 +7,10 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * parse comma separated, key-value pairs
+ * with only alphanumeric keys are allowed. Trim all leading & trailing whitespace.
+ */
 public class CsvParser implements Parser 
 {
     private final Pattern pattern;

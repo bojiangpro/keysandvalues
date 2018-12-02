@@ -2,6 +2,9 @@ package com.bo.context;
 
 import java.util.function.Supplier;
 
+/**
+ * Application context to manager objects for dependency injection
+ */
 public interface Context
 {
     <T, E extends T> void Register(Class<T> type, E instance);

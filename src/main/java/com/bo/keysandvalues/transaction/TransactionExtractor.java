@@ -1,9 +1,14 @@
 package com.bo.keysandvalues.transaction;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 
 public interface TransactionExtractor
 {
-    List<List<Map.Entry<String, Object>>> extractTransactions(List<Map.Entry<String, String>> kvPairs);
+    /**
+     * Extract transactions from key-value pairs.
+     * @param kvPairs
+     * @return transactions
+     */
+    List<List<Entry<String, Object>>> extractTransactions(List<Entry<String, String>> kvPairs);
 }

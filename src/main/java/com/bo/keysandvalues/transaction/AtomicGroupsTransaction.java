@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
 import com.bo.context.Context;
 import com.bo.keysandvalues.ErrorListener;
 
+/**
+ * Extrat transactions based on given atomic groups.
+ */
 public class AtomicGroupsTransaction implements TransactionExtractor {
     private final List<Set<String>> atomicGroups;
     private final Function<List<String>, Object> aggregator;
@@ -23,6 +26,11 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
         this(TansactionUtils::aggregateInteger, context.Resolve(ErrorListener.class));
     }
 
+    /**
+     * Constractor.
+     * @param aggregator function to aggregate values of the same key
+     * @param errorListener
+     */
     public AtomicGroupsTransaction(Function<List<String>, Object> aggregator, ErrorListener errorListener) {
         this.aggregator = aggregator;
         this.errorListener = errorListener;
