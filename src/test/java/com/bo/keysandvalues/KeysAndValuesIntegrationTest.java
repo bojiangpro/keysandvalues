@@ -32,6 +32,7 @@ public class KeysAndValuesIntegrationTest
         context.Register(Formater.class, new OrderedLineFormater());
         AtomicGroupsTransaction transaction = new AtomicGroupsTransaction(context);
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
+        transaction.addAtomicGroup(Arrays.asList("a", "b", "c"));
         context.Register(TransactionExtractor.class, transaction);
         keysAndValues = new KeysAndValuesImpl(context);
     }
@@ -79,6 +80,8 @@ public class KeysAndValuesIntegrationTest
     {
         test("18=zzz,441=one,500=three,442=2,442= A,441 =3,35=D,500=ok  ", 
             Arrays.asList("18=zzz", "35=D", "441=3", "442=A", "500=ok"));
+        test("18=zzz,441=one,500=ok,442= A,a=a, b=b,c=c  ", 
+            Arrays.asList("18=zzz", "35=D", "441=one", "442=A", "500=ok", "a=a", "b=b", "c=c"));
     }
 
     @Test
@@ -94,5 +97,22 @@ public class KeysAndValuesIntegrationTest
         test("500= three , 6 = 7 ,441= one,442=1,442=4", 
                 Arrays.asList("441=one", "442=1","500=three","6=7"));
         assertEquals("atomic group(441,442,500) missing 441,500", errorListener.getMessages().get(0));
+        test("500= three , 6 = 0 ,441= one,442=0,a=4", 
+                Arrays.asList("441=one", "442=1","500=three","6=7"));
+        assertEquals("atomic group(a,b,c) missing b,c", errorListener.getMessages().get(1));
+    }
+
+    @Test
+    public void testGroupOverlap()
+    {
+        test("441=3,500=not ok,441=1, 13=qwerty", Arrays.asList("13=qwerty"));
+        assertEquals("keys within the same group cannot overlap", errorListener.getMessages().get(0));
+    }
+
+    @Test
+    public void testMixGroups()
+    {
+        test("441=3,500=not ok, a=qwerty, 442=2", Arrays.asList(""));
+        assertEquals("Cannot mix two atomic groups", errorListener.getMessages().get(0));
     }
 }
