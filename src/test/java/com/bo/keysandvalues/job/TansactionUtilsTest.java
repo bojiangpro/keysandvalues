@@ -1,4 +1,4 @@
-package com.bo.keysandvalues.transaction;
+package com.bo.keysandvalues.job;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,7 +24,7 @@ public class TansactionUtilsTest
 
     private static void test(List<String> values, Object expected)
     {
-        Object value = TansactionUtils.aggregateInteger(values);
+        Object value = JobUtils.aggregateInteger(values);
         assertEquals(expected, value);
     }
 }

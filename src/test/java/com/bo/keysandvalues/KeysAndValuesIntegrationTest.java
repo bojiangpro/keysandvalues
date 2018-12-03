@@ -13,8 +13,8 @@ import com.bo.keysandvalues.dataprocessing.CsvParser;
 import com.bo.keysandvalues.dataprocessing.Formater;
 import com.bo.keysandvalues.dataprocessing.OrderedLineFormater;
 import com.bo.keysandvalues.dataprocessing.Parser;
-import com.bo.keysandvalues.transaction.AtomicGroupsTransaction;
-import com.bo.keysandvalues.transaction.TransactionExtractor;
+import com.bo.keysandvalues.job.JobExtractor;
+import com.bo.keysandvalues.job.TransactionExtractor;
 import com.bo.mocks.MockErrorListener;
 
 public class KeysAndValuesIntegrationTest
@@ -30,10 +30,10 @@ public class KeysAndValuesIntegrationTest
         context.Register(ErrorListener.class, errorListener);
         context.Register(Parser.class, new CsvParser());
         context.Register(Formater.class, new OrderedLineFormater());
-        AtomicGroupsTransaction transaction = new AtomicGroupsTransaction(context);
+        TransactionExtractor transaction = new TransactionExtractor(context);
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
         transaction.addAtomicGroup(Arrays.asList("a", "b", "c"));
-        context.Register(TransactionExtractor.class, transaction);
+        context.Register(JobExtractor.class, transaction);
         keysAndValues = new KeysAndValuesImpl(context);
     }
 

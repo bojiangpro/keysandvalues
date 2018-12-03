@@ -1,4 +1,4 @@
-package com.bo.keysandvalues.transaction;
+package com.bo.keysandvalues.job;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -17,13 +17,13 @@ import com.bo.keysandvalues.ErrorListener;
 /**
  * Extrat transactions based on given atomic groups.
  */
-public class AtomicGroupsTransaction implements TransactionExtractor {
+public class TransactionExtractor implements JobExtractor {
     private final List<Set<String>> atomicGroups;
     private final Function<List<String>, Object> aggregator;
     private final ErrorListener errorListener;
 
-    public AtomicGroupsTransaction(Context context) {
-        this(TansactionUtils::aggregateInteger, context.Resolve(ErrorListener.class));
+    public TransactionExtractor(Context context) {
+        this(JobUtils::aggregateInteger, context.Resolve(ErrorListener.class));
     }
 
     /**
@@ -31,7 +31,7 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
      * @param aggregator function to aggregate values of the same key
      * @param errorListener
      */
-    public AtomicGroupsTransaction(Function<List<String>, Object> aggregator, ErrorListener errorListener) {
+    public TransactionExtractor(Function<List<String>, Object> aggregator, ErrorListener errorListener) {
         this.aggregator = aggregator;
         this.errorListener = errorListener;
         atomicGroups = new ArrayList<>();
@@ -55,10 +55,10 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
     } 
 
     @Override
-    public List<List<Entry<String, Object>>> extractTransactions(List<Entry<String, String>> kvPairs) 
+    public List<Job> extractJobs(List<Entry<String, String>> kvPairs) 
     {
         int size = kvPairs.size();
-        List<List<Entry<String, Object>>> transactions = new ArrayList<>();
+        List<Job> transactions = new ArrayList<>();
         List<Entry<String, String>> nonAtomics = new ArrayList<>();
         List<Entry<Integer, Set<String>>> atomics = new ArrayList<>();
 
@@ -77,18 +77,17 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
         }
         if (!nonAtomics.isEmpty())
         {
-            transactions.add(BuildTransaction(nonAtomics, aggregator));
+            transactions.add(buildJob(false, nonAtomics, aggregator));
         }
 
-        transactions.addAll(GetAtomicTransactions(atomics, kvPairs));
+        transactions.addAll(getTransactions(atomics, kvPairs));
         return transactions;
     }
 
-    private List<List<Entry<String, Object>>> GetAtomicTransactions(List<Entry<Integer, Set<String>>> atomics, 
-                                                                    List<Entry<String, String>> kvPairs)
+    private List<Job> getTransactions(List<Entry<Integer, Set<String>>> atomics, List<Entry<String, String>> kvPairs)
     {
         int size = atomics.size();
-        List<List<Entry<String, Object>>> transactions = new ArrayList<>();
+        List<Job> transactions = new ArrayList<>();
         if (size == 0) return transactions;
         Set<String> keys = new HashSet<>();
         Set<String> group = atomics.get(0).getValue();
@@ -103,7 +102,7 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
                 List<Entry<String, String>> pairs =atomics.subList(start, i).stream()
                                                         .map(a -> kvPairs.get(a.getKey()))
                                                         .collect(Collectors.toList());
-                transactions.add(BuildTransaction(pairs, aggregator));
+                transactions.add(buildJob(true, pairs, aggregator));
                 start = i;
                 group = atomic.getValue();
                 keys.clear();
@@ -128,7 +127,7 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
             List<Entry<String, String>> pairs =atomics.subList(start, size).stream()
                                                     .map(a -> kvPairs.get(a.getKey()))
                                                     .collect(Collectors.toList());
-            transactions.add(BuildTransaction(pairs, aggregator));
+            transactions.add(buildJob(true, pairs, aggregator));
         }
         else
         {
@@ -140,7 +139,7 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
         return transactions;
     }
     
-    private static List<Entry<String, Object>> BuildTransaction(List<Entry<String, String>> kvPairs, Function<List<String>, Object> aggregator)
+    private static Job buildJob(boolean isTrasaction, List<Entry<String, String>> kvPairs, Function<List<String>, Object> aggregator)
     {
         Map<String, List<String>> groups = kvPairs.stream()
                                                   .collect(Collectors.groupingBy(Entry<String, String>::getKey,
@@ -152,6 +151,6 @@ public class AtomicGroupsTransaction implements TransactionExtractor {
             Object obj = aggregator.apply(e.getValue());
             transaction.add(new SimpleEntry<String, Object>(e.getKey(), obj));
         }
-        return transaction;
+        return new Job(isTrasaction, transaction);
     }
 }

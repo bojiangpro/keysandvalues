@@ -3,14 +3,15 @@ package com.bo.mocks;
 import java.util.List;
 import java.util.Map.Entry;
 
-import com.bo.keysandvalues.transaction.TransactionExtractor;
+import com.bo.keysandvalues.job.Job;
+import com.bo.keysandvalues.job.JobExtractor;
 
-public class MockTransactionExtractor implements TransactionExtractor 
+public class MockTransactionExtractor implements JobExtractor 
 {
-    private List<List<Entry<String, Object>>> transactions;
+    private List<Job> transactions;
 
     @Override
-    public List<List<Entry<String, Object>>> extractTransactions(List<Entry<String, String>> kvPairs) 
+    public List<Job> extractJobs(List<Entry<String, String>> kvPairs) 
     {
 		return getTransactions();
 	}
@@ -18,14 +19,14 @@ public class MockTransactionExtractor implements TransactionExtractor
     /**
      * @return the transactions
      */
-    public List<List<Entry<String, Object>>> getTransactions() {
+    public List<Job> getTransactions() {
         return transactions;
     }
 
     /**
      * @param transactions the transactions to set
      */
-    public void setTransactions(List<List<Entry<String, Object>>> transactions) {
+    public void setTransactions(List<Job> transactions) {
         this.transactions = transactions;
     }
 

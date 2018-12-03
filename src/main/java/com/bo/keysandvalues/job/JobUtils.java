@@ -1,8 +1,8 @@
-package com.bo.keysandvalues.transaction;
+package com.bo.keysandvalues.job;
 
 import java.util.List;
 
-final class TansactionUtils
+public final class JobUtils
 {
     public static Object aggregateInteger(List<String> values)
     {
@@ -39,5 +39,12 @@ final class TansactionUtils
         {
             return null;
         }
+    }
+
+    public static Object aggregate(Object old, Object newObj) {
+        if (newObj instanceof Integer && old instanceof Integer) {
+            newObj = (Integer) old + (Integer) newObj;
+        }
+        return newObj;
     }
 }

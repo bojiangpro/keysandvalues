@@ -9,8 +9,8 @@ import com.bo.keysandvalues.ErrorListener;
 import com.bo.keysandvalues.KeysAndValues;
 import com.bo.keysandvalues.KeysAndValuesImpl;
 import com.bo.keysandvalues.dataprocessing.*;
-import com.bo.keysandvalues.transaction.AtomicGroupsTransaction;
-import com.bo.keysandvalues.transaction.TransactionExtractor;
+import com.bo.keysandvalues.job.TransactionExtractor;
+import com.bo.keysandvalues.job.JobExtractor;;
 
 public class App 
 {
@@ -52,9 +52,9 @@ public class App
         context.Register(ErrorListener.class, errorListener);
         context.Register(Parser.class, new CsvParser());
         context.Register(Formater.class, new OrderedLineFormater());
-        AtomicGroupsTransaction transaction = new AtomicGroupsTransaction(context);
+        TransactionExtractor transaction = new TransactionExtractor(context);
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
-        context.Register(TransactionExtractor.class, transaction);
+        context.Register(JobExtractor.class, transaction);
         return new KeysAndValuesImpl(context);
     }
 }

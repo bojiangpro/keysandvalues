@@ -1,4 +1,4 @@
-package com.bo.keysandvalues.transaction;
+package com.bo.keysandvalues.job;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -14,9 +14,9 @@ import com.bo.utils.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-public class AtomicGroupsTest
+public class TransactionExtractorTest
 {
-    private AtomicGroupsTransaction transaction;
+    private TransactionExtractor transaction;
     private MockErrorListener errorListener;
 
     private static Object simpleAggregate(List<String> values)
@@ -28,7 +28,7 @@ public class AtomicGroupsTest
     public void setUp()
     {
         errorListener = new MockErrorListener();
-        transaction = new AtomicGroupsTransaction(AtomicGroupsTest::simpleAggregate, errorListener);
+        transaction = new TransactionExtractor(TransactionExtractorTest::simpleAggregate, errorListener);
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
     }
 
@@ -80,14 +80,14 @@ public class AtomicGroupsTest
     private void test(String[] data, List<Object[]> expected)
     {
         List<Entry<String, String>> inputs = TestUtils.createEntries(data);
-        List<List<Entry<String, Object>>> transactions = transaction.extractTransactions(inputs);
+        List<Job> transactions = transaction.extractJobs(inputs);
 
         int size = expected.size();
         assertEquals(size, transactions.size());
         for (int i = 0; i < size; i++) 
         {
             List<Entry<String, Object>> t = TestUtils.createEntries(expected.get(i));
-            assertArrayEquals(t.toArray(), transactions.get(i).toArray());
+            assertArrayEquals(t.toArray(), transactions.get(i).getData().toArray());
         }
     }
 }
