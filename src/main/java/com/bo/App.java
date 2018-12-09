@@ -10,7 +10,7 @@ import com.bo.keysandvalues.KeysAndValues;
 import com.bo.keysandvalues.KeysAndValuesImpl;
 import com.bo.keysandvalues.dataprocessing.*;
 import com.bo.keysandvalues.job.TransactionExtractor;
-import com.bo.keysandvalues.job.JobExtractor;;
+import com.bo.keysandvalues.job.JobExtractor;
 
 public class App 
 {
@@ -41,7 +41,7 @@ public class App
             @Override
             public void onError(String msg, Exception e) {
                 System.out.println(msg);
-                System.out.println(e);
+                System.out.println(e.getMessage());
             }
         
             @Override
@@ -51,7 +51,7 @@ public class App
         };
         context.Register(ErrorListener.class, errorListener);
         context.Register(Parser.class, new CsvParser());
-        context.Register(Formater.class, new OrderedLineFormater());
+        context.Register(Formatter.class, new OrderedLineFormatter());
         TransactionExtractor transaction = new TransactionExtractor(context);
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
         context.Register(JobExtractor.class, transaction);

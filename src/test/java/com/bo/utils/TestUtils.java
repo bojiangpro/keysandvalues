@@ -12,7 +12,7 @@ public final class TestUtils
         List<Entry<String, T>> t = new ArrayList<>();
         for (int i = 0; i < data.length; i = i+2) 
         {
-            t.add(new SimpleEntry<String, T>(data[i].toString(), data[i+1]));
+            t.add(new SimpleEntry<>(data[i].toString(), data[i + 1]));
         }
         return t;
     }

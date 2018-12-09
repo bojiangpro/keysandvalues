@@ -15,7 +15,7 @@ import com.bo.context.Context;
 import com.bo.keysandvalues.ErrorListener;
 
 /**
- * Extrat transactions based on given atomic groups.
+ * Extract transactions based on given atomic groups.
  */
 public class TransactionExtractor implements JobExtractor {
     private final List<Set<String>> atomicGroups;
@@ -27,9 +27,9 @@ public class TransactionExtractor implements JobExtractor {
     }
 
     /**
-     * Constractor.
+     * Constructor.
      * @param aggregator function to aggregate values of the same key
-     * @param errorListener
+     * @param errorListener error listener
      */
     public TransactionExtractor(Function<List<String>, Object> aggregator, ErrorListener errorListener) {
         this.aggregator = aggregator;
@@ -139,18 +139,18 @@ public class TransactionExtractor implements JobExtractor {
         return transactions;
     }
     
-    private static Job buildJob(boolean isTrasaction, List<Entry<String, String>> kvPairs, Function<List<String>, Object> aggregator)
+    private static Job buildJob(boolean isTransaction, List<Entry<String, String>> kvPairs, Function<List<String>, Object> aggregator)
     {
         Map<String, List<String>> groups = kvPairs.stream()
-                                                  .collect(Collectors.groupingBy(Entry<String, String>::getKey,
+                                                  .collect(Collectors.groupingBy(Entry::getKey,
                                                         Collectors.mapping(Entry<String, String>::getValue, 
                                                         Collectors.toList())));
         List<Entry<String, Object>> transaction = new ArrayList<>();
         for (Entry<String, List<String>> e : groups.entrySet()) 
         {
             Object obj = aggregator.apply(e.getValue());
-            transaction.add(new SimpleEntry<String, Object>(e.getKey(), obj));
+            transaction.add(new SimpleEntry<>(e.getKey(), obj));
         }
-        return new Job(isTrasaction, transaction);
+        return new Job(isTransaction, transaction);
     }
 }

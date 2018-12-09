@@ -42,7 +42,7 @@ public class ContextImpl implements Context
     public <T> T Resolve(Class<T> type) 
     {
         String key = type.getCanonicalName();
-        return (T) this.defaultInstances.getOrDefault(key, (T)null);
+        return (T) this.defaultInstances.getOrDefault(key, null);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class ContextImpl implements Context
     {
         if (getInstance == null) return;
         String key = type.getCanonicalName();
-        this.typeSuppliers.put(key, () -> getInstance.get());
+        this.typeSuppliers.put(key, getInstance::get);
     }
 
     @Override

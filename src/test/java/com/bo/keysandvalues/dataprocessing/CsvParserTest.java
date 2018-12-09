@@ -28,7 +28,7 @@ public class CsvParserTest
     @Test(expected = IllegalArgumentException.class)
     public void testParseError()
     {
-        test("1!4=15, 14=7,A=B52, 14 = 4, dry = Don't Repeat Yourself", null);
+        test("1!4=15, 14=7,A=B52, 14 = 4, dry = Don't Repeat Yourself", new String[0]);
     }
 
     private void test(String input, String[] expected)

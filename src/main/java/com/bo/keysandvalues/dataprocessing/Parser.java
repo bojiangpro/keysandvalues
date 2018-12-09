@@ -9,7 +9,7 @@ public interface Parser
      * Parse key-value pairs string into key-value pairs list
      * @param input string contains key value pairs
      * @return key-value pairs list
-     * @throws IllegalArgumentException
+     * @throws IllegalArgumentException exception for invalid input
      */
     List<Entry<String, String>> parse(String input) throws IllegalArgumentException;
 }

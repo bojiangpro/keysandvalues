@@ -5,17 +5,17 @@ import java.util.Map.Entry;
 
 public class Job
 {
-    private boolean isTrasaction;
+    private boolean isTransaction;
     private List<Entry<String, Object>> data;
 
-    public Job(boolean isTrasaction, List<Entry<String, Object>> data)
+    public Job(boolean isTransaction, List<Entry<String, Object>> data)
     {
-        this.isTrasaction = isTrasaction;
+        this.isTransaction = isTransaction;
         this.data = data;
     }
 
-    public boolean isTrasaction(){
-        return isTrasaction;
+    public boolean isTransaction(){
+        return isTransaction;
     }
 
     public List<Entry<String, Object>> getData() {

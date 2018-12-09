@@ -4,10 +4,10 @@ import java.util.List;
 
 public final class JobUtils
 {
-    public static Object aggregateInteger(List<String> values)
+    static Object aggregateInteger(List<String> values)
     {
-        int size = values.size();
-		if (values == null || size == 0)
+        int size = values == null ? 0 : values.size();
+		if (size == 0)
         {
             return null;
         }

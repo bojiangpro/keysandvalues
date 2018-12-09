@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-public class TansactionUtilsTest 
+public class TransactionUtilsTest
 {
     @Test
     public void testAggregateInteger()

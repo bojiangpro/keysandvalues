@@ -45,7 +45,7 @@ public class TransactionExtractorTest
     }
 
     @Test
-    public void testExtractTransactionsMutiGroups()
+    public void testExtractTransactionsMultiGroups()
     {
         transaction.addAtomicGroup(Arrays.asList("a", "b", "c"));
         test(new String[]{"a", "a", "b", "b", "c", "c", "d", "d", "441", "1", "442", "2", "500", "3"}, 

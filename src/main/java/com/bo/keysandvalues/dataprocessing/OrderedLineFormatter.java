@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
  * String displays all key-value pairs (one pair per line)
  * Keys are sorted (alpha-ascending, case-insensitive)
  */
-public class OrderedLineFormater implements Formater 
+public class OrderedLineFormatter implements Formatter
 {
 
     @Override

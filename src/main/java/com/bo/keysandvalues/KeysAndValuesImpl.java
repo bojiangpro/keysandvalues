@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import com.bo.context.Context;
-import com.bo.keysandvalues.dataprocessing.Formater;
+import com.bo.keysandvalues.dataprocessing.Formatter;
 import com.bo.keysandvalues.dataprocessing.Parser;
 import com.bo.keysandvalues.job.Job;
 import com.bo.keysandvalues.job.JobExtractor;
@@ -21,7 +21,7 @@ import com.bo.keysandvalues.job.JobUtils;
 public class KeysAndValuesImpl implements KeysAndValues
 {
     private final Parser parser;
-    private final Formater formater;
+    private final Formatter formatter;
     private final ErrorListener errorListener;
     private final JobExtractor jobExtractor;
     private final Map<String, Object> map;
@@ -29,16 +29,16 @@ public class KeysAndValuesImpl implements KeysAndValues
 
     public KeysAndValuesImpl(Context context)
     {
-        this(context.Resolve(Parser.class), context.Resolve(Formater.class), 
+        this(context.Resolve(Parser.class), context.Resolve(Formatter.class),
              context.Resolve(JobExtractor.class), context.Resolve(ErrorListener.class), JobUtils::aggregate);
     }
 
-    public KeysAndValuesImpl(Parser parser, Formater formater, 
+    public KeysAndValuesImpl(Parser parser, Formatter formatter,
                              JobExtractor jobExtractor, ErrorListener listener,
                              BiFunction<Object, Object, Object> aggregator)
     {
         this.parser = parser;
-        this.formater = formater;
+        this.formatter = formatter;
         this.errorListener = listener;
         this.jobExtractor = jobExtractor;
         this.aggregator = aggregator;
@@ -54,7 +54,7 @@ public class KeysAndValuesImpl implements KeysAndValues
             List<Job> jobs = this.jobExtractor.extractJobs(pairs);
             for (Job job : jobs) 
             {
-                if (job.isTrasaction())
+                if (job.isTransaction())
                 {
                     acceptTransaction(job);
                 }
@@ -80,7 +80,7 @@ public class KeysAndValuesImpl implements KeysAndValues
         {
             runJob(job, map, (k, v) -> {});
         } catch (Exception e) {
-            errorListener.onError("Excuting job error", e);
+            errorListener.onError("Executing job error", e);
         }
     }
 
@@ -95,7 +95,7 @@ public class KeysAndValuesImpl implements KeysAndValues
         } 
         catch (Exception e) 
         {
-            errorListener.onError("Excuting trasaction error", e);
+            errorListener.onError("Executing transaction error", e);
             while (!checkPoints.empty()) 
             {
                 Entry<String, Object> checkPoint = checkPoints.pop();
@@ -107,7 +107,7 @@ public class KeysAndValuesImpl implements KeysAndValues
                     map.put(checkPoint.getKey(), backup);
                 }
             }
-            errorListener.onError("Trasaction rolled back");
+            errorListener.onError("Transaction rolled back");
         }
     }
 
@@ -134,7 +134,7 @@ public class KeysAndValuesImpl implements KeysAndValues
     {
         try 
         {
-            return this.formater.format(Collections.unmodifiableCollection(this.map.entrySet())); 
+            return this.formatter.format(Collections.unmodifiableCollection(this.map.entrySet()));
         } 
         catch (Exception e) 
         {

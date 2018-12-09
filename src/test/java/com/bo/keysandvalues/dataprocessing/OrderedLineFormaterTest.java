@@ -16,7 +16,7 @@ public class OrderedLineFormaterTest
         Collection<Entry<String, Object>> kvPairs = TestUtils.createEntries(new Object[] {
             "a", "a", "c", 3, "B", "b"
         });
-        Formater formater = new OrderedLineFormater();
+        Formatter formater = new OrderedLineFormatter();
         String expected = String.join(System.lineSeparator(), new String[]{ "a=a", "B=b", "c=3" });
         assertEquals(expected, formater.format(kvPairs));
     }

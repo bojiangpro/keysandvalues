@@ -4,14 +4,15 @@ import org.junit.Test;
 import org.junit.Before;
 import static org.junit.Assert.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Arrays;
 
 import com.bo.context.Context;
 import com.bo.context.ContextImpl;
 import com.bo.keysandvalues.dataprocessing.CsvParser;
-import com.bo.keysandvalues.dataprocessing.Formater;
-import com.bo.keysandvalues.dataprocessing.OrderedLineFormater;
+import com.bo.keysandvalues.dataprocessing.Formatter;
+import com.bo.keysandvalues.dataprocessing.OrderedLineFormatter;
 import com.bo.keysandvalues.dataprocessing.Parser;
 import com.bo.keysandvalues.job.JobExtractor;
 import com.bo.keysandvalues.job.TransactionExtractor;
@@ -23,13 +24,12 @@ public class KeysAndValuesIntegrationTest
     private MockErrorListener errorListener;
 
     @Before
-    public void setUp() throws Exception 
-    {
+    public void setUp() {
         Context context = new ContextImpl();
         errorListener = new MockErrorListener();
         context.Register(ErrorListener.class, errorListener);
         context.Register(Parser.class, new CsvParser());
-        context.Register(Formater.class, new OrderedLineFormater());
+        context.Register(Formatter.class, new OrderedLineFormatter());
         TransactionExtractor transaction = new TransactionExtractor(context);
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
         transaction.addAtomicGroup(Arrays.asList("a", "b", "c"));
@@ -45,9 +45,9 @@ public class KeysAndValuesIntegrationTest
     }
 
     @Test
-    public void testNomralAccept()
+    public void testNormalAccept()
     {
-        test("", Arrays.asList(""));
+        test("", Collections.singletonList(""));
         test("pi=314159,hello=world", Arrays.asList("hello=world", "pi=314159"));
     }
 
@@ -63,7 +63,7 @@ public class KeysAndValuesIntegrationTest
     @Test
     public void testDisplay()
     {
-        test("one=two", Arrays.asList("one=two"));
+        test("one=two", Collections.singletonList("one=two"));
         test("Three=four", Arrays.asList("one=two", "Three=four"));
         test("5=6", Arrays.asList("5=6", "one=two", "Three=four"));
         test("14=x", Arrays.asList("14=x","5=6", "one=two", "Three=four"));
@@ -87,7 +87,7 @@ public class KeysAndValuesIntegrationTest
     @Test
     public void testIncompleteGroup()
     {
-        test("441=3,500=not ok,13=qwerty", Arrays.asList("13=qwerty"));
+        test("441=3,500=not ok,13=qwerty", Collections.singletonList("13=qwerty"));
         assertEquals("atomic group(441,442,500) missing 442", errorListener.getMessages().get(0));
     }
 
@@ -105,14 +105,14 @@ public class KeysAndValuesIntegrationTest
     @Test
     public void testGroupOverlap()
     {
-        test("441=3,500=not ok,441=1, 13=qwerty", Arrays.asList("13=qwerty"));
+        test("441=3,500=not ok,441=1, 13=qwerty", Collections.singletonList("13=qwerty"));
         assertEquals("keys within the same group cannot overlap", errorListener.getMessages().get(0));
     }
 
     @Test
     public void testMixGroups()
     {
-        test("441=3,500=not ok, a=qwerty, 442=2", Arrays.asList(""));
+        test("441=3,500=not ok, a=qwerty, 442=2", Collections.singletonList(""));
         assertEquals("Cannot mix two atomic groups", errorListener.getMessages().get(0));
     }
 }

@@ -13,15 +13,8 @@ public class MockTransactionExtractor implements JobExtractor
     @Override
     public List<Job> extractJobs(List<Entry<String, String>> kvPairs) 
     {
-		return getTransactions();
+		return transactions;
 	}
-
-    /**
-     * @return the transactions
-     */
-    public List<Job> getTransactions() {
-        return transactions;
-    }
 
     /**
      * @param transactions the transactions to set

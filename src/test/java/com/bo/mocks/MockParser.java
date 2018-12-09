@@ -16,7 +16,7 @@ public class MockParser implements Parser {
 	{
 		if (this.parser == null)
 		{
-			return parseNothing(input);
+			return parseNothing();
 		}
 		return this.parser.apply(input);
 	}
@@ -29,7 +29,7 @@ public class MockParser implements Parser {
 		this.parser = parser;
 	}
 
-	private static List<Entry<String, String>> parseNothing(String input)
+	private static List<Entry<String, String>> parseNothing()
 	{
 		return new ArrayList<>();
 	}

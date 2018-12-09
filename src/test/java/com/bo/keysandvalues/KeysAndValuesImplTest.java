@@ -3,20 +3,16 @@ package com.bo.keysandvalues;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import com.bo.keysandvalues.job.Job;
 import com.bo.keysandvalues.job.JobUtils;
+import com.bo.mocks.MockFormatter;
 import com.bo.mocks.MockErrorListener;
-import com.bo.mocks.MockFormater;
 import com.bo.mocks.MockParser;
 import com.bo.mocks.MockTransactionExtractor;
 import com.bo.utils.TestUtils;
@@ -29,18 +25,18 @@ public class KeysAndValuesImplTest
     private KeysAndValues keysAndValues;
     private MockErrorListener errorListener;
     private MockParser parser;
-    private MockFormater formater;
+    private MockFormatter formatter;
     private MockTransactionExtractor transactionExtractor;
     private BiFunction<Object, Object, Object> aggregator;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         errorListener = new MockErrorListener();
         parser = new MockParser();
-        formater = new MockFormater();
+        formatter = new MockFormatter();
         transactionExtractor = new MockTransactionExtractor();
         aggregator = JobUtils::aggregate;
-        this.keysAndValues = new KeysAndValuesImpl(parser, formater, transactionExtractor, errorListener,
+        this.keysAndValues = new KeysAndValuesImpl(parser, formatter, transactionExtractor, errorListener,
                 (old, newObj) -> aggregator.apply(old, newObj));
     }
 
@@ -61,7 +57,7 @@ public class KeysAndValuesImplTest
         transactionExtractor.setTransactions(transactions);
         keysAndValues.accept("");
         keysAndValues.display();
-        return formater.getMap();
+        return formatter.getMap();
     }
 
     @Test
@@ -107,7 +103,7 @@ public class KeysAndValuesImplTest
 
     private static List<Map.Entry<String, String>> parseError(String input)
     {
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException(input);
     }
 
     private static String formatError(Collection<Entry<String, Object>> kvPairs)
@@ -122,7 +118,7 @@ public class KeysAndValuesImplTest
         List<Object[]> data = new ArrayList<>();
         data.add(new Object[]{"a", "a", "1", 1});
 
-        formater.setFormater(KeysAndValuesImplTest::formatError);
+        formatter.setFormatter(KeysAndValuesImplTest::formatError);
         run(data);
 
         List<String> messages = errorListener.getMessages();
@@ -133,10 +129,10 @@ public class KeysAndValuesImplTest
     @Test
     public void testAcceptJobError()
     {
-        transactionExtractor.setTransactions(Arrays.asList(new Job(false, null)));
+        transactionExtractor.setTransactions(Collections.singletonList(new Job(false, null)));
         keysAndValues.accept("doesn't matter");
         List<String> messages = errorListener.getMessages();
-        assertEquals("Excuting job error", messages.get(0));
+        assertEquals("Executing job error", messages.get(0));
         assertEquals(NullPointerException.class, errorListener.getErrors().get(0).getClass());
     }
 
@@ -145,8 +141,8 @@ public class KeysAndValuesImplTest
     {
         run(Arrays.asList(new Object[]{"a", "a"}, new Object[]{"1", 1}));
 
-        transactionExtractor.setTransactions(Arrays.asList(new Job(true, 
-            Arrays.asList(new SimpleEntry<>("a", "b"), new SimpleEntry<>("b", "b"), new SimpleEntry<>("1", 2)))));
+        transactionExtractor.setTransactions(Collections.singletonList(new Job(true,
+                Arrays.asList(new SimpleEntry<>("a", "b"), new SimpleEntry<>("b", "b"), new SimpleEntry<>("1", 2)))));
         
         AtomicInteger count = new AtomicInteger(0);
         aggregator = (o, n) -> 
@@ -160,13 +156,13 @@ public class KeysAndValuesImplTest
         };
 
         keysAndValues.accept("doesn't matter");
-        Map<String, Object> map = formater.getMap();
+        Map<String, Object> map = formatter.getMap();
         assertEquals(2, map.size());
         assertEquals(1, map.get("1"));
         assertEquals("a", map.get("a"));
         List<String> messages = errorListener.getMessages();
-        assertEquals("Excuting trasaction error", messages.get(0));
+        assertEquals("Executing transaction error", messages.get(0));
         assertEquals(RuntimeException.class, errorListener.getErrors().get(0).getClass());
-        assertEquals("Trasaction rolled back", messages.get(1));
+        assertEquals("Transaction rolled back", messages.get(1));
     }
 }

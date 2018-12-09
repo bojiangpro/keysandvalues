@@ -7,7 +7,7 @@ public interface JobExtractor
 {
     /**
      * Extract jobs from key-value pairs.
-     * @param kvPairs
+     * @param kvPairs key value pairs
      * @return jobs
      */
     List<Job> extractJobs(List<Entry<String, String>> kvPairs);
