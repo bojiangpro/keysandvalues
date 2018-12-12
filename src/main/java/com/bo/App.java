@@ -9,8 +9,11 @@ import com.bo.keysandvalues.ErrorListener;
 import com.bo.keysandvalues.KeysAndValues;
 import com.bo.keysandvalues.KeysAndValuesImpl;
 import com.bo.keysandvalues.dataprocessing.*;
+import com.bo.keysandvalues.job.JobUtils;
 import com.bo.keysandvalues.job.TransactionExtractor;
 import com.bo.keysandvalues.job.JobExtractor;
+import com.bo.keysandvalues.storage.Storage;
+import com.bo.keysandvalues.storage.TrieStorage;
 
 public class App 
 {
@@ -52,6 +55,7 @@ public class App
         context.Register(ErrorListener.class, errorListener);
         context.Register(Parser.class, new CsvParser());
         context.Register(Formatter.class, new OrderedLineFormatter());
+        context.RegisterType(Storage.class, () -> new TrieStorage(JobUtils::aggregate));
         TransactionExtractor transaction = new TransactionExtractor(context);
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
         context.Register(JobExtractor.class, transaction);

@@ -1,24 +1,16 @@
 package com.bo.keysandvalues;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.*;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
-
 import com.bo.keysandvalues.job.Job;
-import com.bo.keysandvalues.job.JobUtils;
-import com.bo.mocks.MockFormatter;
-import com.bo.mocks.MockErrorListener;
-import com.bo.mocks.MockParser;
-import com.bo.mocks.MockTransactionExtractor;
+import com.bo.mocks.*;
 import com.bo.utils.TestUtils;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.AbstractMap.SimpleEntry;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static org.junit.Assert.*;
 
 public class KeysAndValuesImplTest
 {
@@ -27,7 +19,7 @@ public class KeysAndValuesImplTest
     private MockParser parser;
     private MockFormatter formatter;
     private MockTransactionExtractor transactionExtractor;
-    private BiFunction<Object, Object, Object> aggregator;
+    private SimpleStorage storage;
 
     @Before
     public void setUp() {
@@ -35,9 +27,9 @@ public class KeysAndValuesImplTest
         parser = new MockParser();
         formatter = new MockFormatter();
         transactionExtractor = new MockTransactionExtractor();
-        aggregator = JobUtils::aggregate;
-        this.keysAndValues = new KeysAndValuesImpl(parser, formatter, transactionExtractor, errorListener,
-                (old, newObj) -> aggregator.apply(old, newObj));
+        storage = new SimpleStorage();
+        this.keysAndValues = new KeysAndValuesImpl(parser, formatter,
+                transactionExtractor, errorListener, storage);
     }
 
     private static List<Job> CreateTransactions(List<Object[]> data) {
@@ -85,7 +77,7 @@ public class KeysAndValuesImplTest
         
         map = run(data);
         assertEquals("aa", map.get("a"));
-        assertEquals(2, map.get("1"));
+        assertEquals(1, map.get("1"));
         assertEquals(1, map.get("b"));
         assertEquals("1", map.get("2"));
     }
@@ -95,7 +87,7 @@ public class KeysAndValuesImplTest
     {
         parser.setParser(KeysAndValuesImplTest::parseError);
         Map<String, Object> map = run(null);
-        assertTrue(map.isEmpty());
+        assertNull(map);
         List<String> messages = errorListener.getMessages();
         assertEquals("Input error", messages.get(0));
         assertEquals(IllegalArgumentException.class, errorListener.getErrors().get(0).getClass());
@@ -143,17 +135,8 @@ public class KeysAndValuesImplTest
 
         transactionExtractor.setTransactions(Collections.singletonList(new Job(true,
                 Arrays.asList(new SimpleEntry<>("a", "b"), new SimpleEntry<>("b", "b"), new SimpleEntry<>("1", 2)))));
-        
-        AtomicInteger count = new AtomicInteger(0);
-        aggregator = (o, n) -> 
-        {
-            int c = count.addAndGet(1);
-            if (c > 1) 
-            {
-                throw new RuntimeException();
-            }
-            return JobUtils.aggregate(o, n);
-        };
+
+        storage.setException(new RuntimeException());
 
         keysAndValues.accept("doesn't matter");
         Map<String, Object> map = formatter.getMap();

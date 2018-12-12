@@ -1,22 +1,17 @@
 package com.bo.keysandvalues;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.Map.Entry;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.AbstractMap.SimpleEntry;
-
-import java.util.Collections;
-import java.util.HashMap;
-
 import com.bo.context.Context;
 import com.bo.keysandvalues.dataprocessing.Formatter;
 import com.bo.keysandvalues.dataprocessing.Parser;
 import com.bo.keysandvalues.job.Job;
 import com.bo.keysandvalues.job.JobExtractor;
-import com.bo.keysandvalues.job.JobUtils;
+import com.bo.keysandvalues.storage.Snapshot;
+import com.bo.keysandvalues.storage.Storage;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Stack;
 
 public class KeysAndValuesImpl implements KeysAndValues
 {
@@ -24,25 +19,26 @@ public class KeysAndValuesImpl implements KeysAndValues
     private final Formatter formatter;
     private final ErrorListener errorListener;
     private final JobExtractor jobExtractor;
-    private final Map<String, Object> map;
-    private final BiFunction<Object, Object, Object> aggregator;
+    private final Storage storage;
+    private final Stack<Snapshot> snapshots;
 
     public KeysAndValuesImpl(Context context)
     {
         this(context.Resolve(Parser.class), context.Resolve(Formatter.class),
-             context.Resolve(JobExtractor.class), context.Resolve(ErrorListener.class), JobUtils::aggregate);
+             context.Resolve(JobExtractor.class), context.Resolve(ErrorListener.class),
+             context.ResolveType(Storage.class));
     }
 
-    public KeysAndValuesImpl(Parser parser, Formatter formatter,
-                             JobExtractor jobExtractor, ErrorListener listener,
-                             BiFunction<Object, Object, Object> aggregator)
+    KeysAndValuesImpl(Parser parser, Formatter formatter, JobExtractor jobExtractor,
+                      ErrorListener listener, Storage storage)
     {
         this.parser = parser;
         this.formatter = formatter;
         this.errorListener = listener;
         this.jobExtractor = jobExtractor;
-        this.aggregator = aggregator;
-        this.map = new HashMap<>();
+        this.storage = storage;
+        this.storage.initialize();
+        snapshots = new Stack<>();
     }
 
     @Override
@@ -52,16 +48,16 @@ public class KeysAndValuesImpl implements KeysAndValues
         {
             List<Entry<String, String>> pairs = this.parser.parse(kvPairs);
             List<Job> jobs = this.jobExtractor.extractJobs(pairs);
+            Snapshot snapshot = null;
             for (Job job : jobs) 
             {
-                if (job.isTransaction())
-                {
-                    acceptTransaction(job);
+                Snapshot s = acceptJob(job);
+                if (s != null) {
+                    snapshot = s;
                 }
-                else
-                {
-                    acceptJob(job);
-                }
+            }
+            if (snapshot != null) {
+                snapshots.push(snapshot);
             }
         } 
         catch (IllegalArgumentException e) 
@@ -74,59 +70,33 @@ public class KeysAndValuesImpl implements KeysAndValues
         }
     }
 
-    private void acceptJob(Job job)
+    private Snapshot acceptJob(Job job)
     {
-        try 
+        try
         {
-            runJob(job, map, (k, v) -> {});
+            return runJob(job, storage);
         } catch (Exception e) {
-            errorListener.onError("Executing job error", e);
-        }
-    }
-
-    private void acceptTransaction(Job job)
-    {
-        Stack<Entry<String, Object>> checkPoints = new Stack<>();
-        try 
-        {
-            checkPoints.setSize(job.getData().size());
-            checkPoints.clear();
-            runJob(job, map, (k, v) -> checkPoints.add(new SimpleEntry<>(k, v)));
-        } 
-        catch (Exception e) 
-        {
-            errorListener.onError("Executing transaction error", e);
-            while (!checkPoints.empty()) 
+            if (job.isTransaction())
             {
-                Entry<String, Object> checkPoint = checkPoints.pop();
-                Object backup = checkPoint.getValue();
-                if (backup == null) {
-                    map.remove(checkPoint.getKey());
-                } else
-                {
-                    map.put(checkPoint.getKey(), backup);
-                }
+                errorListener.onError("Executing transaction error", e);
+                errorListener.onError("Transaction rolled back");
+            } else {
+                errorListener.onError("Executing job error", e);
             }
-            errorListener.onError("Transaction rolled back");
+
+            return null;
         }
     }
 
-    private void runJob(Job job, Map<String, Object> map, BiConsumer<String, Object> onCheckPoint) 
+    private Snapshot runJob(Job job, Storage storage)
     {
         List<Entry<String, Object>> data = job.getData();
 		for (Entry<String, Object> p : data)
 		{
-		    String key = p.getKey();
-		    Object value = p.getValue();
-		    Object backup = null;
-		    if (map.containsKey(key))
-		    {
-		        backup = map.get(key);
-		        value = aggregator.apply(backup, p.getValue());
-            }
-            map.put(key, value);
-            onCheckPoint.accept(key, backup);
+		    storage.put(p.getKey(), p.getValue());
         }
+
+		return storage.createSnapshot();
     }
 
     @Override
@@ -134,12 +104,27 @@ public class KeysAndValuesImpl implements KeysAndValues
     {
         try 
         {
-            return this.formatter.format(Collections.unmodifiableCollection(this.map.entrySet()));
+            if (snapshots.isEmpty()) {
+                return "";
+            }
+            Snapshot snapshot = snapshots.peek();
+            return this.formatter.format(Collections.unmodifiableCollection(snapshot.entrySet()));
         } 
         catch (Exception e) 
         {
             this.errorListener.onError("Display error", e);
             return null;
+        }
+    }
+
+    @Override
+    public void undo() {
+        if (snapshots.isEmpty()) return;
+        snapshots.pop();
+        if (snapshots.isEmpty()){
+            storage.initialize();
+        } else {
+            storage.initialize(snapshots.peek());
         }
     }
 

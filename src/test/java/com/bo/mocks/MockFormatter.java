@@ -16,7 +16,7 @@ public class MockFormatter implements Formatter {
     @Override
 	public String format(Collection<Entry<String, Object>> kvPairs) {
         this.map = kvPairs.stream()
-        .collect(Collectors.toMap(Entry<String, Object>::getKey, Entry<String, Object>::getValue));
+        .collect(Collectors.toMap(Entry<String, Object>::getKey, Entry::getValue));
         if (formatter == null)
         {
             return null;

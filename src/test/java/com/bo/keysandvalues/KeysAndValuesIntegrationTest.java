@@ -1,5 +1,8 @@
 package com.bo.keysandvalues;
 
+import com.bo.keysandvalues.job.JobUtils;
+import com.bo.keysandvalues.storage.Storage;
+import com.bo.keysandvalues.storage.TrieStorage;
 import org.junit.Test;
 import org.junit.Before;
 import static org.junit.Assert.*;
@@ -34,6 +37,7 @@ public class KeysAndValuesIntegrationTest
         transaction.addAtomicGroup(Arrays.asList("441", "442", "500"));
         transaction.addAtomicGroup(Arrays.asList("a", "b", "c"));
         context.Register(JobExtractor.class, transaction);
+        context.RegisterType(Storage.class, () -> new TrieStorage(JobUtils::aggregate));
         keysAndValues = new KeysAndValuesImpl(context);
     }
 
