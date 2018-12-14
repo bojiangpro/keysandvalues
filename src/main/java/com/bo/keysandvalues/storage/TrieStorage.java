@@ -1,10 +1,8 @@
 package com.bo.keysandvalues.storage;
 
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.BiFunction;
 
 public class TrieStorage implements Storage{
@@ -27,6 +25,12 @@ public class TrieStorage implements Storage{
     public void initialize(Snapshot snapshot) {
         if (snapshot instanceof TrieSnapshot) {
             init(((TrieSnapshot) snapshot).getRoot());
+        } else {
+            init(null);
+            Collection<Entry<String, Object>> entries = snapshot.entrySet();
+            for (Entry<String, Object> e : entries) {
+                put(e.getKey(), e.getValue());
+            }
         }
     }
 
@@ -36,10 +40,10 @@ public class TrieStorage implements Storage{
     }
 
     public void put(String key, Object value) {
-        TrieNode parent  = root;
         int length = key.length();
         int index = 0;
 
+        TrieNode parent = root;
         while (true) {
             if (index >= length) {
                 Object old = parent.getValue();
@@ -53,20 +57,22 @@ public class TrieStorage implements Storage{
             if (children == null) {
                 children = new HashMap<>();
                 parent.setChildren(children);
-            } else {
-                parent = children.compute(key.charAt(index), (k, n) -> getMutableNode(n));
-                index ++;
             }
+            parent = children.compute(key.charAt(index), (k, n) -> getMutableNode(n));
+            index ++;
         }
 
     }
 
     @Override
     public Snapshot createSnapshot() {
-        Snapshot snapshot = new TrieSnapshot(root);
-        // prepare for next snapshot
-        init(root);
-        return snapshot;
+        return new TrieSnapshot(root);
+    }
+
+    @Override
+    public boolean isDirty() {
+        // exclude root
+        return mutableNodes.size() > 1;
     }
 
     private TrieNode getMutableNode(TrieNode node) {
@@ -74,14 +80,7 @@ public class TrieStorage implements Storage{
           node = new TrieNode();
           mutableNodes.add(node);
         } else if (!mutableNodes.contains(node)) {
-            Object value = node.getValue();
-            Map<Character, TrieNode> children = node.getChildren();
-            if (children != null) {
-                children = new HashMap<>(children);
-            }
-            node = new TrieNode();
-            node.setValue(value);
-            node.setChildren(children);
+            node = new TrieNode(node);
             mutableNodes.add(node);
         }
         return node;

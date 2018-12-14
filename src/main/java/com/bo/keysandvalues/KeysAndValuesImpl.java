@@ -48,16 +48,17 @@ public class KeysAndValuesImpl implements KeysAndValues
         {
             List<Entry<String, String>> pairs = this.parser.parse(kvPairs);
             List<Job> jobs = this.jobExtractor.extractJobs(pairs);
-            Snapshot snapshot = null;
+            Snapshot snapshot = snapshots.isEmpty() ? null : snapshots.peek();
+            Snapshot checkPoint = snapshot;
             for (Job job : jobs) 
             {
-                Snapshot s = acceptJob(job);
+                Snapshot s = acceptJob(job, checkPoint);
                 if (s != null) {
-                    snapshot = s;
+                    checkPoint = s;
                 }
             }
-            if (snapshot != null) {
-                snapshots.push(snapshot);
+            if (checkPoint != snapshot) {
+                snapshots.push(checkPoint);
             }
         } 
         catch (IllegalArgumentException e) 
@@ -70,33 +71,31 @@ public class KeysAndValuesImpl implements KeysAndValues
         }
     }
 
-    private Snapshot acceptJob(Job job)
+    private Snapshot acceptJob(Job job, Snapshot checkPoint)
     {
         try
         {
-            return runJob(job, storage);
+            for (Entry<String, Object> p : job.getData())
+            {
+                storage.put(p.getKey(), p.getValue());
+            }
         } catch (Exception e) {
             if (job.isTransaction())
             {
                 errorListener.onError("Executing transaction error", e);
+                withdrawChanges(checkPoint);
                 errorListener.onError("Transaction rolled back");
+                return null;
             } else {
                 errorListener.onError("Executing job error", e);
             }
-
-            return null;
         }
-    }
-
-    private Snapshot runJob(Job job, Storage storage)
-    {
-        List<Entry<String, Object>> data = job.getData();
-		for (Entry<String, Object> p : data)
-		{
-		    storage.put(p.getKey(), p.getValue());
+        if (storage.isDirty()) {
+            Snapshot snapshot = storage.createSnapshot();
+            storage.initialize(snapshot);
+            return snapshot;
         }
-
-		return storage.createSnapshot();
+        return null;
     }
 
     @Override
@@ -121,10 +120,14 @@ public class KeysAndValuesImpl implements KeysAndValues
     public void undo() {
         if (snapshots.isEmpty()) return;
         snapshots.pop();
-        if (snapshots.isEmpty()){
+        withdrawChanges(snapshots.isEmpty() ? null : snapshots.peek());
+    }
+
+    private void withdrawChanges(Snapshot checkPoint) {
+        if (checkPoint == null){
             storage.initialize();
         } else {
-            storage.initialize(snapshots.peek());
+            storage.initialize(checkPoint);
         }
     }
 

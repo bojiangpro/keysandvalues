@@ -121,11 +121,16 @@ public class KeysAndValuesImplTest
     @Test
     public void testAcceptJobError()
     {
-        transactionExtractor.setTransactions(Collections.singletonList(new Job(false, null)));
+        storage.setErrorKey("1");
+        run(Arrays.asList(new Object[]{"a", "a"}, new Object[]{"b", "b"}, new Object[]{"1", 1}));
         keysAndValues.accept("doesn't matter");
+        Map<String, Object> map = formatter.getMap();
+        assertEquals(2, map.size());
+        assertEquals("a", map.get("a"));
+        assertEquals("b", map.get("b"));
         List<String> messages = errorListener.getMessages();
         assertEquals("Executing job error", messages.get(0));
-        assertEquals(NullPointerException.class, errorListener.getErrors().get(0).getClass());
+        assertEquals(RuntimeException.class, errorListener.getErrors().get(0).getClass());
     }
 
     @Test
@@ -136,7 +141,7 @@ public class KeysAndValuesImplTest
         transactionExtractor.setTransactions(Collections.singletonList(new Job(true,
                 Arrays.asList(new SimpleEntry<>("a", "b"), new SimpleEntry<>("b", "b"), new SimpleEntry<>("1", 2)))));
 
-        storage.setException(new RuntimeException());
+        storage.setErrorKey("1");
 
         keysAndValues.accept("doesn't matter");
         Map<String, Object> map = formatter.getMap();

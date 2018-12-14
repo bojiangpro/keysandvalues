@@ -10,7 +10,7 @@ public class SimpleStorage implements Storage {
 
     private SimpleSnapshot snapshot;
 
-    private RuntimeException exception;
+    private String errorKey;
 
     @Override
     public void initialize() {
@@ -25,20 +25,25 @@ public class SimpleStorage implements Storage {
 
     @Override
     public void put(String key, Object value) {
+        if (key.equals(errorKey)) {
+            throw new RuntimeException();
+        }
         snapshot.getMap().put(key, value);
     }
 
     @Override
     public Snapshot createSnapshot() {
-        if (exception != null) {
-            throw exception;
-        }
         Snapshot s = snapshot;
         initialize(snapshot);
         return s;
     }
 
-    public void setException(RuntimeException exception) {
-        this.exception = exception;
+    @Override
+    public boolean isDirty() {
+        return true;
+    }
+
+    public void setErrorKey(String errorKey) {
+        this.errorKey = errorKey;
     }
 }

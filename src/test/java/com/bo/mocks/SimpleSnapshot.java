@@ -9,7 +9,7 @@ public class SimpleSnapshot implements Snapshot {
 
     private Map<String, Object> map;
 
-    SimpleSnapshot(Map<String, Object> map) {
+    public SimpleSnapshot(Map<String, Object> map) {
         this.map = map;
     }
 

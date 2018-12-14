@@ -9,4 +9,6 @@ public interface Storage {
     void put(String key, Object value);
 
     Snapshot createSnapshot();
+
+    boolean isDirty();
 }
