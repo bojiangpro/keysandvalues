@@ -25,9 +25,14 @@ public class App
         {
             try 
             {
-                String kvPairs = scanner.nextLine();
+                String kvPairs = scanner.nextLine().trim();
+                if ("undo".equals(kvPairs)) {
+                    keysAndValues.undo();
+                }
                 keysAndValues.accept(kvPairs);
+                System.out.println("Start Display ...");
                 System.out.println(keysAndValues.display());
+                System.out.println("End Display");
             }
             catch(Exception e)
             {

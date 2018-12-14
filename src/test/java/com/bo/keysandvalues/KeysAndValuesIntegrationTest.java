@@ -44,6 +44,10 @@ public class KeysAndValuesIntegrationTest
     private void test(String input, List<String> expected)
     {
         keysAndValues.accept(input);
+        verify(expected);
+    }
+
+    private void verify(List<String> expected) {
         String text = keysAndValues.display();
         assertEquals(String.join(System.lineSeparator(), expected), text);
     }
@@ -118,5 +122,38 @@ public class KeysAndValuesIntegrationTest
     {
         test("441=3,500=not ok, a=qwerty, 442=2", Collections.singletonList(""));
         assertEquals("Cannot mix two atomic groups", errorListener.getMessages().get(0));
+    }
+
+    @Test
+    public void testUndo() {
+        keysAndValues.undo();
+        assertEquals("", keysAndValues.display());
+        keysAndValues.accept("pi=314159,hello=world");
+        keysAndValues.undo();
+        assertEquals("", keysAndValues.display());
+        keysAndValues.accept("one=two");
+        keysAndValues.accept("Three=four");
+        keysAndValues.accept("5=6");
+        keysAndValues.accept("5=1");
+        keysAndValues.accept("14=x");
+        verify(Arrays.asList("14=x","5=7", "one=two", "Three=four"));
+        keysAndValues.undo();
+        verify(Arrays.asList("5=7", "one=two", "Three=four"));
+        keysAndValues.undo();
+        verify(Arrays.asList("5=6", "one=two", "Three=four"));
+        keysAndValues.undo();
+        verify(Arrays.asList("one=two", "Three=four"));
+        keysAndValues.undo();
+        verify(Collections.singletonList("one=two"));
+        keysAndValues.undo();
+        assertEquals("", keysAndValues.display());
+        keysAndValues.undo();
+        assertEquals("", keysAndValues.display());
+
+        // test undo to a partial succeeded submission
+        keysAndValues.accept("500= three , 6 = 7 ,441= one,442=1,442=4");
+        keysAndValues.accept("500= three , 6 = 0 ,441= one,442=0,a=4");
+        keysAndValues.undo();
+        verify(Arrays.asList("441=one", "442=1","500=three","6=7"));
     }
 }

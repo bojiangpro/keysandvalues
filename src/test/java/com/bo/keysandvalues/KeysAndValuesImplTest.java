@@ -43,13 +43,11 @@ public class KeysAndValuesImplTest
         return transactions;
     }
 
-    private Map<String, Object> run(List<Object[]> data)
+    private void run(List<Object[]> data)
     {
         List<Job> transactions = CreateTransactions(data);
         transactionExtractor.setTransactions(transactions);
         keysAndValues.accept("");
-        keysAndValues.display();
-        return formatter.getMap();
     }
 
     @Test
@@ -59,35 +57,23 @@ public class KeysAndValuesImplTest
         data.add(new Object[]{"a", "a", "1", 1});
         data.add(new Object[]{"b", "b", "2", 1});
         
-        Map<String, Object> map = run(data);
-
-        assertEquals(4, map.size());
-        assertTrue(map.containsKey("a"));
-        assertTrue(map.containsKey("1"));
-        assertTrue(map.containsKey("b"));
-        assertTrue(map.containsKey("2"));
-        assertEquals("a", map.get("a"));
-        assertEquals(1, map.get("1"));
-        assertEquals("b", map.get("b"));
-        assertEquals(1, map.get("2"));
+        run(data);
+        verify(new Object[]{"a", "a", "1", 1, "b", "b", "2", 1});
 
         data = new ArrayList<>();
-        data.add(new Object[]{"a", "aa", "1", 1});
+        data.add(new Object[]{"a", "aa", "1", 2});
         data.add(new Object[]{"b", 1, "2", "1"});
         
-        map = run(data);
-        assertEquals("aa", map.get("a"));
-        assertEquals(1, map.get("1"));
-        assertEquals(1, map.get("b"));
-        assertEquals("1", map.get("2"));
+        run(data);
+        verify(new Object[]{"a", "aa", "1", 2, "b", 1, "2", "1"});
     }
 
     @Test
     public void testAcceptError()
     {
         parser.setParser(KeysAndValuesImplTest::parseError);
-        Map<String, Object> map = run(null);
-        assertNull(map);
+        run(null);
+        assertEquals("", keysAndValues.display());
         List<String> messages = errorListener.getMessages();
         assertEquals("Input error", messages.get(0));
         assertEquals(IllegalArgumentException.class, errorListener.getErrors().get(0).getClass());
@@ -112,7 +98,7 @@ public class KeysAndValuesImplTest
 
         formatter.setFormatter(KeysAndValuesImplTest::formatError);
         run(data);
-
+        keysAndValues.display();
         List<String> messages = errorListener.getMessages();
         assertEquals("Display error", messages.get(0));
         assertEquals(UnsupportedOperationException.class, errorListener.getErrors().get(0).getClass());
@@ -124,10 +110,8 @@ public class KeysAndValuesImplTest
         storage.setErrorKey("1");
         run(Arrays.asList(new Object[]{"a", "a"}, new Object[]{"b", "b"}, new Object[]{"1", 1}));
         keysAndValues.accept("doesn't matter");
-        Map<String, Object> map = formatter.getMap();
-        assertEquals(2, map.size());
-        assertEquals("a", map.get("a"));
-        assertEquals("b", map.get("b"));
+        verify(new Object[]{"b", "b", "a", "a"});
+
         List<String> messages = errorListener.getMessages();
         assertEquals("Executing job error", messages.get(0));
         assertEquals(RuntimeException.class, errorListener.getErrors().get(0).getClass());
@@ -144,13 +128,42 @@ public class KeysAndValuesImplTest
         storage.setErrorKey("1");
 
         keysAndValues.accept("doesn't matter");
-        Map<String, Object> map = formatter.getMap();
-        assertEquals(2, map.size());
-        assertEquals(1, map.get("1"));
-        assertEquals("a", map.get("a"));
+        verify(new Object[]{"1", 1, "a", "a"});
         List<String> messages = errorListener.getMessages();
         assertEquals("Executing transaction error", messages.get(0));
         assertEquals(RuntimeException.class, errorListener.getErrors().get(0).getClass());
         assertEquals("Transaction rolled back", messages.get(1));
+    }
+
+    @Test
+    public void testUndo() {
+        keysAndValues.undo();
+        assertEquals("", keysAndValues.display());
+        run(Collections.singletonList(new Object[]{"a", "a", "1", 1}));
+        run(Collections.singletonList(new Object[]{"b", "b", "2", 1}));
+        verify(new Object[]{"a", "a", "1", 1, "b", "b", "2", 1});
+
+        keysAndValues.undo();
+        verify(new Object[]{"a", "a", "1", 1});
+
+        run(Collections.singletonList(new Object[]{"a", "aa", "1", 2}));
+        verify(new Object[]{"a", "aa", "1", 2});
+
+        keysAndValues.undo();
+        verify(new Object[]{"a", "a", "1", 1});
+
+        keysAndValues.undo();
+        assertEquals("", keysAndValues.display());
+        keysAndValues.undo();
+        assertEquals("", keysAndValues.display());
+    }
+
+    private void verify(Object[] expected) {
+        keysAndValues.display();
+        Map<String, Object> map = formatter.getMap();
+        assertEquals(expected.length/2, map.size());
+        for (int i = 0; i < expected.length; i += 2) {
+            assertEquals(expected[i+1], map.get(expected[i].toString()));
+        }
     }
 }

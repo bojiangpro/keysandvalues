@@ -117,7 +117,7 @@ public class KeysAndValuesImpl implements KeysAndValues
     }
 
     @Override
-    public void undo() {
+    public synchronized void undo() {
         if (snapshots.isEmpty()) return;
         snapshots.pop();
         withdrawChanges(snapshots.isEmpty() ? null : snapshots.peek());
