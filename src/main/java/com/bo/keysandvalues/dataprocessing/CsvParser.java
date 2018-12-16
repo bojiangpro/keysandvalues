@@ -34,7 +34,7 @@ public class CsvParser implements Parser
         }
         pairs.add(new SimpleEntry<>(matcher.group(1), matcher.group(2).trim()));
       }
-		  return pairs;
+      return pairs;
     }
 
 }

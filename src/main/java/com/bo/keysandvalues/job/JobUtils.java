@@ -43,7 +43,7 @@ public final class JobUtils
 
     public static Object aggregate(Object old, Object newObj) {
         if (newObj instanceof Integer && old instanceof Integer) {
-            newObj = (Integer) old + (Integer) newObj;
+            return (Integer) old + (Integer) newObj;
         }
         return newObj;
     }

@@ -42,26 +42,23 @@ public class TrieStorage implements Storage{
     public void put(String key, Object value) {
         int length = key.length();
         int index = 0;
-
-        TrieNode parent = root;
-        while (true) {
-            if (index >= length) {
-                Object old = parent.getValue();
-                if (old != null) {
-                    value = aggregator.apply(old, value);
-                }
-                parent.setValue(value);
-                return;
-            }
-            Map<Character, TrieNode> children = parent.getChildren();
+        // search node
+        TrieNode node = root;
+        while (index < length) {
+            Map<Character, TrieNode> children = node.getChildren();
             if (children == null) {
                 children = new HashMap<>();
-                parent.setChildren(children);
+                node.setChildren(children);
             }
-            parent = children.compute(key.charAt(index), (k, n) -> getMutableNode(n));
+            node = children.compute(key.charAt(index), (k, n) -> getMutableNode(n));
             index ++;
         }
-
+        // update value
+        Object old = node.getValue();
+        if (old != null) {
+            value = aggregator.apply(old, value);
+        }
+        node.setValue(value);
     }
 
     @Override

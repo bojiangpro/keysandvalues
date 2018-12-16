@@ -28,8 +28,9 @@ public class App
                 String kvPairs = scanner.nextLine().trim();
                 if ("undo".equals(kvPairs)) {
                     keysAndValues.undo();
+                } else {
+                    keysAndValues.accept(kvPairs);
                 }
-                keysAndValues.accept(kvPairs);
                 System.out.println("Start Display ...");
                 System.out.println(keysAndValues.display());
                 System.out.println("End Display");

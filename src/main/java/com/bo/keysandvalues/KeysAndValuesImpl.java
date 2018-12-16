@@ -24,6 +24,7 @@ public class KeysAndValuesImpl implements KeysAndValues
 
     public KeysAndValuesImpl(Context context)
     {
+        // use resolve type to get newly created storage instance
         this(context.Resolve(Parser.class), context.Resolve(Formatter.class),
              context.Resolve(JobExtractor.class), context.Resolve(ErrorListener.class),
              context.ResolveType(Storage.class));
@@ -46,10 +47,10 @@ public class KeysAndValuesImpl implements KeysAndValues
     {
         try 
         {
-            List<Entry<String, String>> pairs = this.parser.parse(kvPairs);
-            List<Job> jobs = this.jobExtractor.extractJobs(pairs);
-            Snapshot snapshot = snapshots.isEmpty() ? null : snapshots.peek();
-            Snapshot checkPoint = snapshot;
+            List<Entry<String, String>> pairs = parser.parse(kvPairs);
+            List<Job> jobs = jobExtractor.extractJobs(pairs);
+            Snapshot currentSnapshot = snapshots.isEmpty() ? null : snapshots.peek();
+            Snapshot checkPoint = currentSnapshot;
             for (Job job : jobs) 
             {
                 Snapshot s = acceptJob(job, checkPoint);
@@ -57,17 +58,18 @@ public class KeysAndValuesImpl implements KeysAndValues
                     checkPoint = s;
                 }
             }
-            if (checkPoint != snapshot) {
+            // record snapshot of last succeeded job result
+            if (checkPoint != currentSnapshot) {
                 snapshots.push(checkPoint);
             }
         } 
         catch (IllegalArgumentException e) 
         {
-            this.errorListener.onError("Input error", e);
+            errorListener.onError("Input error", e);
         } 
         catch (Exception e)
         {
-            this.errorListener.onError("Error", e);
+            errorListener.onError("Error", e);
         }
     }
 
@@ -107,11 +109,11 @@ public class KeysAndValuesImpl implements KeysAndValues
                 return "";
             }
             Snapshot snapshot = snapshots.peek();
-            return this.formatter.format(Collections.unmodifiableCollection(snapshot.entrySet()));
+            return formatter.format(Collections.unmodifiableCollection(snapshot.entrySet()));
         } 
         catch (Exception e) 
         {
-            this.errorListener.onError("Display error", e);
+            errorListener.onError("Display error", e);
             return null;
         }
     }
